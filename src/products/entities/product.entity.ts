@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 //Entitie es una representacion de una tabla en PG y de una collection en Mongo
 @Entity()
@@ -40,5 +40,17 @@ export class Product {
 
     @Column('text')
     gender: string;
+
+    //verificaciones antes de
+    @BeforeInsert()
+    // cada vez que quiera insertar va a pasar por estas condiciones
+    checkSlugInsert() {
+        if (!this.slug) { this.slug = this.title }
+
+        this.slug = this.slug
+            .toLowerCase()
+            .replaceAll(' ', '_')
+            .replaceAll("'", '')
+    }
 }
 

@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,6 +7,9 @@ import { Product } from './entities/product.entity';
 
 @Injectable()
 export class ProductsService {
+
+  // Creacion de losg personalizados mas claros como los logs de nest
+  private readonly logger = new Logger('ProductsService')
 
   constructor(
     //ayuda para la comunicacion con la base de datos
@@ -17,6 +20,20 @@ export class ProductsService {
 
   async create(createProductDto: CreateProductDto) {
     try {
+      //Es un codigo grnade y redundante se puede crear un metodo ver Products.entity para entender la mejora 
+
+      // if (!createProductDto.slug) {
+      //   createProductDto.slug = createProductDto.title
+      //     .toLowerCase()
+      //     .replaceAll(' ', '_')
+      //     .replaceAll("'", '')
+      // } else {
+      //   createProductDto.slug = createProductDto.slug
+      //     .toLowerCase()
+      //     .replaceAll(' ', '_')
+      //     .replaceAll("'", '')
+      // }
+
       //en esta linea solo esta creando el producto mas no lo esta guardando en la BD(crea una instancia del producto)
       const product = this.productRepository.create(createProductDto);
 
@@ -26,8 +43,7 @@ export class ProductsService {
       return product;
 
     } catch (error) {
-      console.log(error)
-      throw new InternalServerErrorException("ayuda");
+      this.handleDBExceptions(error)
     }
   }
 
@@ -45,5 +61,15 @@ export class ProductsService {
 
   remove(id: number) {
     return `This action removes a #${id} product`;
+  }
+
+  private handleDBExceptions(error: any) {
+    // Este if sale para validar error y dar un mejor detalle se saco viendo el console.log normal
+    if (error.code === '23505') throw new InternalServerErrorException(error.detail);
+    this.logger.error(error)
+
+    // este es el console.log que se vio para poder ternee mas detalles y personalizar los logs
+    // console.log(error)
+    throw new InternalServerErrorException("Unexpected error, check server logs");
   }
 }
