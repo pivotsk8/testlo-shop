@@ -10,6 +10,7 @@ import { validate as isUUID } from 'uuid'
 import { ProductImage, Product } from './entities';
 
 
+
 @Injectable()
 export class ProductsService {
 
@@ -92,12 +93,16 @@ export class ProductsService {
       // product = await this.productRepository.findOneBy({ slug: term })
 
       // Vamos a crear un query builder para personalizar las queries 
-      const queryBuilder = this.productRepository.createQueryBuilder()
+      const queryBuilder = this.productRepository.createQueryBuilder('product')
       product = await queryBuilder
         .where(`UPPER(title)=:title or slug=:slug`, {
           title: term.toUpperCase(),
           slug: term.toLowerCase(),
-        }).getOne();
+        })
+        //ver doc de typeORM se una el leftJoinAndSelect cuando se esta usando el createQueryBuilder porque este ultimo desabilita el eagerde las relacion 
+        // en la entity
+        .leftJoinAndSelect('product.images', 'productImages')
+        .getOne()
     }
 
     if (!product) {
@@ -112,6 +117,14 @@ export class ProductsService {
     // } catch (error) {
     //   console.log(error)
     // }
+  }
+
+  async findOnePlain(term: string) {
+    const { images = [], ...rest } = await this.findOne(term)
+    return {
+      ...rest,
+      images: images.map((img: { url: string; }) => img.url)
+    }
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {
