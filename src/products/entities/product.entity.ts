@@ -1,4 +1,4 @@
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 //Entitie es una representacion de una tabla en PG y de una collection en Mongo
 @Entity()
@@ -52,5 +52,16 @@ export class Product {
             .replaceAll(' ', '_')
             .replaceAll("'", '')
     }
+
+    // transforma antes de update
+    @BeforeUpdate()
+    checkSlugUpdate() {
+        if (this.slug)
+            this.slug = this.slug
+                .toLowerCase()
+                .replaceAll(' ', '_')
+                .replaceAll("'", '')
+    }
+
 }
 
