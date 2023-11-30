@@ -65,6 +65,7 @@ export class ProductsService {
     }
   }
 
+  // Ver para entender los queries personalizados 
   async findOne(term: string): Promise<any> {
     let product: Product
     if (isUUID(term)) {
@@ -95,8 +96,21 @@ export class ProductsService {
     // }
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: string, updateProductDto: UpdateProductDto) {
+    //El preoload va a buscar por el id y va a cambiar las prodpiedades de esten cambiadas en el updateProductDto
+    const product = await this.productRepository.preload({
+      id: id,
+      ...updateProductDto
+    })
+    if (!product) throw new NotFoundException(`Product with id:#${id} not found`);
+
+    try {
+      await this.productRepository.save(product)
+      return product;
+    } catch (error) {
+      this.handleDBExceptions(error)
+    }
+
   }
 
   async remove(id: string) {
