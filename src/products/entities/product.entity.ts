@@ -1,4 +1,6 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { ProductImage } from './product-image.entity';
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { ProductImage } from "../entities";
 
 //Entitie es una representacion de una tabla en PG y de una collection en Mongo
 @Entity()
@@ -46,6 +48,12 @@ export class Product {
         default: []
     })
     tags: string[]
+    @OneToMany(
+        () => ProductImage,
+        (ProductImage) => ProductImage.product,
+        { cascade: true }
+    )
+    images?: ProductImage;
 
     //verificaciones antes de
     @BeforeInsert()
