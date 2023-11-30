@@ -1,10 +1,14 @@
 import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Product } from './entities/product.entity';
+
 import { PaginationDto } from '../common/dtos/pagination.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+
+import { Product } from './entities/product.entity';
+import { validate as isUUID } from 'uuid'
+
 
 @Injectable()
 export class ProductsService {
@@ -61,16 +65,26 @@ export class ProductsService {
     }
   }
 
-  async findOne(id: string): Promise<any> {
-    try {
-
-      const product = await this.productRepository.findOneBy({ id })
-      if (!product) throw new NotFoundException(`Product with id ${id} not found`)
-      return product
-
-    } catch (error) {
-      console.log(error)
+  async findOne(term: string): Promise<any> {
+    let product: Product
+    if (isUUID(term)) {
+      product = await this.productRepository.findOneBy({ id: term })
+    } else {
+      product = await this.productRepository.findOneBy({ slug: term })
     }
+
+    if (!product) {
+      throw new NotFoundException(`Product with id ${term} not found`)
+    }
+    return product
+    // try {
+    //   const product = await this.productRepository.findOneBy({ id })
+    //   if (!product) throw new NotFoundException(`Product with id ${id} not found`)
+    //   return product
+
+    // } catch (error) {
+    //   console.log(error)
+    // }
   }
 
   update(id: number, updateProductDto: UpdateProductDto) {
