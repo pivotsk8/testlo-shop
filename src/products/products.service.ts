@@ -6,8 +6,8 @@ import { PaginationDto } from '../common/dtos/pagination.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
-import { Product } from './entities/product.entity';
 import { validate as isUUID } from 'uuid'
+import { ProductImage, Product } from './entities';
 
 
 @Injectable()
@@ -19,11 +19,15 @@ export class ProductsService {
   constructor(
     //ayuda para la comunicacion con la base de datos
     @InjectRepository(Product)
-    private readonly productRepository: Repository<Product>
+    private readonly productRepository: Repository<Product>,
+
+    @InjectRepository(ProductImage)
+    private readonly productImageRepository: Repository<ProductImage>
 
   ) { }
 
   async create(createProductDto: CreateProductDto) {
+
     try {
       //Es un codigo grnade y redundante se puede crear un metodo ver Products.entity para entender la mejora 
 
@@ -40,12 +44,20 @@ export class ProductsService {
       // }
 
       //en esta linea solo esta creando el producto mas no lo esta guardando en la BD(crea una instancia del producto)
-      const product = this.productRepository.create(createProductDto);
+      // En este caso los(...) es operador rest
+      const { images = [], ...productDetails } = createProductDto
+
+      const product = this.productRepository.create({
+        //en este caso los(...) es operador spread
+        ...productDetails,
+        //no se le envia el producto ya que se esta haciendo la insercion desde la cracion del producto en si 
+        images: images.map(image => this.productImageRepository.create({ url: image }))
+      });
 
       //Aqui si estoy guardando esa instancia en la BD
       await this.productRepository.save(product);
 
-      return product;
+      return { ...product, images };
 
     } catch (error) {
       this.handleDBExceptions(error)
@@ -58,8 +70,14 @@ export class ProductsService {
       const products = await this.productRepository.find({
         take: limit,
         skip: offset,
+        relations: {
+          images: true,
+        }
       })
-      return products
+      return products.map(product => ({
+        ...product,
+        images: product.images.map(image => image.url)
+      }))
     } catch (error) {
       this.handleDBExceptions(error)
     }
@@ -100,7 +118,8 @@ export class ProductsService {
     //El preoload va a buscar por el id y va a cambiar las prodpiedades de esten cambiadas en el updateProductDto
     const product = await this.productRepository.preload({
       id: id,
-      ...updateProductDto
+      ...updateProductDto,
+      images: []
     })
     if (!product) throw new NotFoundException(`Product with id:#${id} not found`);
 
