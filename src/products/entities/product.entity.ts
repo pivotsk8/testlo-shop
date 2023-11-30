@@ -41,6 +41,12 @@ export class Product {
     @Column('text')
     gender: string;
 
+    @Column('text', {
+        array: true,
+        default: []
+    })
+    tags: string[]
+
     //verificaciones antes de
     @BeforeInsert()
     // cada vez que quiera insertar va a pasar por estas condiciones
